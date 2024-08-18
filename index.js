@@ -4,6 +4,7 @@ import cors from "cors";
 import morgan from "morgan";
 import bodyParser from "body-parser";
 import path from "path";
+import axios from "axios";
 
 // Security packages
 import helmet from "helmet";
@@ -39,3 +40,27 @@ app.use(errorMiddleware);
 app.listen(PORT, () => {
   console.log(`Server running on port: ${PORT}`);
 });
+
+const url = `https://social-media-backend-yv11.onrender.com`;
+
+const interval = 30000;
+
+function reloadWebsite() {
+  axios
+    .get(url)
+    .then((response) => {
+      console.log(
+        `Reloaded at ${new Date().toISOString()}: Status Code ${
+          response.status
+        }`
+      );
+    })
+    .catch((error) => {
+      console.error(
+        `Error reloading at ${new Date().toISOString()}:`,
+        error.message
+      );
+    });
+}
+
+setInterval(reloadWebsite, interval);
