@@ -43,7 +43,7 @@ app.listen(PORT, () => {
 
 const url = `https://social-media-backend-yv11.onrender.com`;
 
-const interval = 3600000; 
+const interval = 1800000; 
 
 function reloadWebsite() {
   axios
