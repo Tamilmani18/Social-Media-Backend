@@ -7,15 +7,40 @@ import PasswordReset from "../models/passwordReset.js";
 
 dotenv.config();
 
-const { AUTH_EMAIL, AUTH_PASSWORD, APP_URL } = process.env;
+const {
+  APP_URL,
+  AUTH_EMAIL,
+  AUTH_PASSWORD,
+  SMTP_FROM_EMAIL,
+  SMTP_HOST,
+  SMTP_PORT,
+  SMTP_SECURE,
+} = process.env;
 
-let transporter = nodemailer.createTransport({
-  host: "smtp-mail.outlook.com",
+const transporter = nodemailer.createTransport({
+  host: SMTP_HOST || "smtp.gmail.com",
+  port: Number(SMTP_PORT || 587),
+  secure: SMTP_SECURE === "true",
+  requireTLS: true,
   auth: {
     user: AUTH_EMAIL,
     pass: AUTH_PASSWORD,
   },
 });
+
+const fromEmail = SMTP_FROM_EMAIL || AUTH_EMAIL;
+
+const sendMail = async (mailOptions) => {
+  if (!AUTH_EMAIL) {
+    throw new Error("Missing AUTH_EMAIL environment variable");
+  }
+
+  if (!AUTH_PASSWORD) {
+    throw new Error("Missing AUTH_PASSWORD environment variable");
+  }
+
+  return transporter.sendMail(mailOptions);
+};
 
 export const sendVerificationEmail = async (user, res) => {
   const { _id, email, lastName } = user;
@@ -26,7 +51,7 @@ export const sendVerificationEmail = async (user, res) => {
 
   //   mail options
   const mailOptions = {
-    from: AUTH_EMAIL,
+    from: fromEmail,
     to: email,
     subject: "Email Verification",
     html: `<div
@@ -61,23 +86,17 @@ export const sendVerificationEmail = async (user, res) => {
     });
 
     if (newVerifiedEmail) {
-      transporter
-        .sendMail(mailOptions)
-        .then(() => {
-          res.status(201).send({
-            success: "PENDING",
-            message:
-              "Verification email has been sent to your account. Check your email for further instructions.",
-          });
-        })
-        .catch((err) => {
-          console.log(err);
-          res.status(404).json({ message: "Something went wrong" });
-        });
+      await sendMail(mailOptions);
+
+      res.status(201).send({
+        success: "PENDING",
+        message:
+          "Verification email has been sent to your account. Check your email for further instructions.",
+      });
     }
   } catch (error) {
     console.log(error);
-    res.status(404).json({ message: "Something went wrong" });
+    res.status(500).json({ message: error.message || "Something went wrong" });
   }
 };
 
@@ -90,7 +109,7 @@ export const resetPasswordLink = async (user, res) => {
   // mail options
 
   const mailOptions = {
-    from: AUTH_EMAIL,
+    from: fromEmail,
     to: email,
     subject: "Password Reset",
     html: `<p style="font-family: Arial, sans-serif; font-size: 16px; color: #333; background-color: #f7f7f7; padding: 20px; border-radius: 5px;">
@@ -114,21 +133,15 @@ export const resetPasswordLink = async (user, res) => {
     });
 
     if (resetEmail) {
-      transporter
-        .sendMail(mailOptions)
-        .then(() => {
-          res.status(201).send({
-            success: "PENDING",
-            message: "Reset Password Link has been sent to your account.",
-          });
-        })
-        .catch((err) => {
-          console.log(err);
-          res.status(404).json({ message: "Something went wrong" });
-        });
+      await sendMail(mailOptions);
+
+      res.status(201).send({
+        success: "PENDING",
+        message: "Reset Password Link has been sent to your account.",
+      });
     }
   } catch (error) {
     console.log(error);
-    res.status(404).json({ message: "Something went wrong" });
+    res.status(500).json({ message: error.message || "Something went wrong" });
   }
 };

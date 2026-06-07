@@ -28,7 +28,7 @@ export const register = async (req, res, next) => {
       password: hashedPassword,
     });
 
-    sendVerificationEmail(user, res);
+    await sendVerificationEmail(user, res);
   } catch (error) {
     console.log(error);
     res.status(400).json({ message: error.message });
